@@ -4,10 +4,191 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Document</title>
+    <script src="https://d3js.org/d3.v7.min.js"></script>
+    <style>
+        #main-content{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1{
+            font-family: Helvetica;
+        }
+    </style>
 </head>
 <body>
+    <div id="main-content">
+        <h1>Project 1</h1>
+    </div>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
     <script>
-        
+        let data= d3.csv("Airline_review.csv")
+
+        .then((data)=>{
+            //Constants
+            const topFiveAirlineInfo= topFiveAirlineData(data)
+            const mainContainer= d3.select("#main-content")
+            const width=700
+            const height=500
+            const ratingMinMax= [0,10]
+            const domainMinMax= [0,12]
+            const monthToNumber={
+                January:1,
+                February:2,
+                March:3,
+                April:4,
+                May:5,
+                June:6,
+                July:7,
+                August:8,
+                September:9,
+                October:10,
+                November:11,
+                December:12,
+            }
+            const xScale= d3.scaleLinear()
+                            .domain(domainMinMax)
+                            .range([0,width])
+            const yScale=d3.scaleLinear()
+                            .domain(ratingMinMax)
+                            .range([height,0])
+                            
+            // Add elements to DOM
+            mainContainer.append("svg")
+                            .attr("id","airline-visualization")
+                            .attr("width",width)
+                            .attr("height",height)
+                            .style("background-color","purple")
+
+
+
+
+
+
+            /**
+             * Filters airline data to retrieve the top five airlines with the most data
+             * 
+             * 
+             * @param data Airline data in json format.
+             * @return Js object containing the top five airlines and associated information per month
+             * */
+            function topFiveAirlineData(data){
+
+                let nameDateRating= data.map((datapoint)=>{
+
+                    return {
+                        "Airline Name":datapoint['Airline Name'], 
+                        "Overall Rating":datapoint['Overall_Rating'],
+                        "Review Date": datapoint['Review Date'].split(" ")[1]
+                    }
+                })
+                let prev= undefined
+                let currObj={}
+                let allAirlines=[]
+                for (let i=0;i<nameDateRating.length;i++){
+                    let name= nameDateRating[i]["Airline Name"]
+                    let rating= nameDateRating[i]["Overall Rating"]
+                    let month= nameDateRating[i]["Review Date"]
+                    if (prev==undefined ){
+                        let airlineInfo={
+                            airlineName: name,
+                            month:{}
+                        }
+                        if (rating!="n"){
+                            airlineInfo.month[month]=[]
+                            airlineInfo.month[month].push(rating)
+                        }
+
+                        currObj=airlineInfo
+                        prev=name
+                    }
+                    else if (prev!=name){
+                        // Make the new airline object
+                        allAirlines.push(currObj)
+                        let airlineInfo={
+                            airlineName: name,
+                            month:{}
+                        }
+                        if (rating!="n"){
+                            airlineInfo.month[month]=[]
+                            airlineInfo.month[month].push(rating)
+                        }
+
+                        currObj=airlineInfo
+                        prev=name
+                    }
+                    else{
+                        // Name is the same so aggregate data
+                        if (month in currObj.month){
+                            if (rating!="n"){
+                                currObj.month[month].push(rating)
+                            }
+                        }
+                        else{
+                            if (rating!="n"){
+                                currObj.month[month]=[]
+                                currObj.month[month].push(rating)
+                            }
+
+                        }
+                    }
+
+                    if (i==nameDateRating.length-1){
+                        allAirlines.push(currObj)
+                    }
+                }
+
+                let fullData=allAirlines.filter((airline)=> Object.keys(airline.month).length==12)
+                const sortedArrays = fullData.sort((a, b) => {
+                    let aCounter=0
+                    let bCounter=0
+                    for(let month in a.month){
+                        aCounter=aCounter+a.month[month].length
+                    }
+                    for (let month in b.month){
+                        bCounter=bCounter+b.month[month].length
+                    }
+                    return bCounter-aCounter
+                });
+                let counter=sortedArrays.map((airline)=>{
+                    let counterValue=0
+                    for (let value in airline.month){
+                        counterValue=counterValue+airline.month[value].length
+                    }
+                    return {
+                        name: airline.airlineName,
+                        totalLength: counterValue
+                    }
+                })
+                let mostData= counter.filter((airline)=> airline.totalLength==100)
+                const finalAirlines= ["Air Europa",,"Etihad Airways","Eurowings","Shanghai Airlines","Thai Airways"]
+                const finalAirlineData=allAirlines.filter((airline)=> finalAirlines.includes(airline.airlineName))
+                const averageAirlineRatingPerMonth= finalAirlineData.map((airline)=>{
+                    let updatedMonthInformation={}
+                    for (let key in airline.month){
+                        updatedMonthInformation[key]=airline.month[key].reduce((sum,value)=>sum+parseInt(value),0)/airline.month[key].length
+                    }
+                    return {...airline,month:updatedMonthInformation}
+                })
+                return averageAirlineRatingPerMonth
+            }
+        })
+        .catch()
     </script>
 </body>
 </html>
