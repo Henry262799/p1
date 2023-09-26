@@ -14,37 +14,43 @@
         h1{
             font-family: Helvetica;
         }
+        .gridlines line {
+          stroke: #bbb;
+        }
+        
+        .gridlines .domain {
+          stroke: none;
+        }
     </style>
 </head>
 <body>
     <div id="main-content">
-        <h1>Project 1</h1>
     </div>
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
     <script>
         let data= d3.csv("Airline_review.csv")
 
         .then((data)=>{
+            
+
             //Constants
             const topFiveAirlineInfo= topFiveAirlineData(data)
+            const airlineColors={
+                "Air Europa":"Teal",
+                "Etihad Airways":"Magenta",
+                "Dragonair":"Crimson",
+                "Shanghai Airlines": "Turquoise",
+                "Thai Airways":"Maroon",
+            }
             const mainContainer= d3.select("#main-content")
-            const width=700
-            const height=500
+            // Top margin for title, right margin for a key of each airline, bottom margin for axis and x-label, left margin for ylabel and y-axis
+            const margins={top:30,right:100,bottom:50,left:50}
+            const width=1300
+            const height=800
+            mainContainer.append("svg")
+                            .attr("id","airline-visualization")
+                            .attr("width",width)
+                            .attr("height",height)
+            const svg=d3.select("#airline-visualization")
             const ratingMinMax= [0,10]
             const domainMinMax= [0,12]
             const monthToNumber={
@@ -61,24 +67,134 @@
                 November:11,
                 December:12,
             }
-            const xScale= d3.scaleLinear()
-                            .domain(domainMinMax)
-                            .range([0,width])
+            const monthScale=["January",
+                "February",
+                "March",
+                "April",
+                "May",
+                "June",
+                "July",
+                "August",
+                "September",
+                "October",
+                "November",
+                "December"]
+            
+            const chartWidth=width-margins.left-margins.right
+            const chartHeight=height-margins.top-margins.bottom
+
+            const xScale= d3.scalePoint()
+                            .domain(monthScale)
+                            .range([0,chartWidth])
+        
             const yScale=d3.scaleLinear()
                             .domain(ratingMinMax)
-                            .range([height,0])
-                            
-            // Add elements to DOM
-            mainContainer.append("svg")
-                            .attr("id","airline-visualization")
-                            .attr("width",width)
-                            .attr("height",height)
-                            .style("background-color","purple")
+                            .range([chartHeight,margins.bottom])
+            
+            const leftAxis=d3.axisLeft(yScale)
+
+            const bottomAxis=d3.axisBottom(xScale)
+
+            const leftGridline= d3.axisLeft(yScale)
+                                    .tickSize(-chartWidth-10)
+                                    .tickFormat('')
+
+            const bottomGridline= d3.axisBottom(xScale)
+                                    .tickSize(-chartHeight+margins.top+10)
+                                    .tickFormat('')
+            
+            // Add chart elements to the DOM
+            const chartArea=svg.append('g')
+                                .attr("transform",`translate(${margins.left},${margins.top})`)
+                                .attr("class","gridInfo")
+            
+            // Adding y axis to DOM
+            svg.append("g")
+                .attr("class","y-axis")
+                .attr("transform",`translate(${margins.left-10},${margins.top})`)
+                .call(leftAxis)
+            
+            // Adding x axis to the DOM
+            svg.append("g")
+                .attr("class", "x-axis")
+                .attr("transform",`translate(${margins.left},${chartHeight+margins.top+10})`)
+                .call(bottomAxis)
+            
+            // Add horizontal gridlines
+            svg.append("g")
+                .attr("class","gridlines")
+                .attr("transform",`translate(${margins.left-10},${margins.top})`)
+                .lower()
+                .call(leftGridline)
+            // Adding vertical gridlines
+            svg.append("g")
+                .attr("class","gridlines")
+                .attr("transform",`translate(${margins.left},${chartHeight+margins.top+10})`)
+                .lower()
+                .call(bottomGridline)
+            
+            // Add x label
+            svg.append("text")
+                .attr("class","x-label")
+                .attr("text-anchor","start")
+                .text("Month")
+                .attr("transform",`translate(${5+chartWidth/2},${chartHeight+margins.top+50})`)
+            
+            // Add y label
+            svg.append("text")
+                .attr("class","y-label")
+                .text("Average rating")
+                .attr("transform",`translate(${margins.left-40},${(margins.top+margins.bottom+chartHeight)/2}) rotate(-90)`)
+                .attr("text-anchor","middle")
+
+            // Add title
+            svg.append("text")
+                .attr("class","title")
+                .text("Monthly Rating For Airlines")
+                .attr("transform",`translate(${margins.left+chartWidth/2},${margins.top+30})`)
+                .attr("text-anchor","middle")
+                .attr("font-size","20px")
+
+            // Plot points
+            // console.log(topFiveAirlineInfo)
+            const lineGenerator =d3.line()
+                            .x(d=>xScale(d[0]))
+                            .y(d=>yScale(d[1]))
+            
+            for (let index in topFiveAirlineInfo){
+                let airlineInfo=topFiveAirlineInfo[index]
+                let color = airlineColors[airlineInfo.airlineName]
+                let monthRatingInfo= airlineInfo.month
+                for(let month in monthRatingInfo){
+                    // console.log(xScale(month))
+                    chartArea.append("circle")
+                        .attr('cx',xScale(month))
+                        .attr('cy',yScale(monthRatingInfo[month]))
+                        .attr("r","4px")
+                        .style("fill",color)
+                }
+                // Convert month rating info to an array
+                let monthRatingInfoArray=Object.entries(monthRatingInfo)
+                monthRatingInfoArray.sort((a,b)=>{
+                    let monthA=a[0]
+                    let monthB=b[0]
+                    return monthToNumber[monthA]- monthToNumber[monthB]
+                })
+                // console.log(monthRatingInfoArray)
 
 
+                chartArea.append("path")
+                        .datum(monthRatingInfoArray)
+                        .attr("class","line")
+                        .attr("fill","none")
+                        .attr("stroke",color)
+                        .attr("d",lineGenerator)
+                
+            }
 
-
-
+            function createLegends(){
+                
+            }
 
             /**
              * Filters airline data to retrieve the top five airlines with the most data
@@ -176,7 +292,8 @@
                     }
                 })
                 let mostData= counter.filter((airline)=> airline.totalLength==100)
-                const finalAirlines= ["Air Europa",,"Etihad Airways","Eurowings","Shanghai Airlines","Thai Airways"]
+                // "Etihad Airways"
+                const finalAirlines= ["Air Europa","Dragonair","Shanghai Airlines","Thai Airways"]
                 const finalAirlineData=allAirlines.filter((airline)=> finalAirlines.includes(airline.airlineName))
                 const averageAirlineRatingPerMonth= finalAirlineData.map((airline)=>{
                     let updatedMonthInformation={}
@@ -185,6 +302,7 @@
                     }
                     return {...airline,month:updatedMonthInformation}
                 })
+                console.log(fullData)
                 return averageAirlineRatingPerMonth
             }
         })
