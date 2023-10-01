@@ -35,11 +35,11 @@
             //Constants
             const topFiveAirlineInfo= topFiveAirlineData(data)
             const airlineColors={
-                "Air Europa":"Purple",
-                "Etihad Airways":"Magenta",
-                "Dragonair":"Crimson",
-                "Shanghai Airlines": "Lime",
-                "Thai Airways":"Orange",
+                "Air Europa": "#316EC5",
+                "Etihad Airways":"#EEAD3F",
+                "Dragonair":"#39807F",
+                "Shanghai Airlines": "#CC2B3F",
+                "Thai Airways":"#73409D",
             }
             const mainContainer= d3.select("#main-content")
             // Top margin for title, right margin for a key of each airline, bottom margin for axis and x-label, left margin for ylabel and y-axis
@@ -154,6 +154,7 @@
                 .attr("transform",`translate(${margins.left+chartWidth/2},${margins.top+30})`)
                 .attr("text-anchor","middle")
                 .attr("font-size","20px")
+                
 
             // Plot points
             // console.log(topFiveAirlineInfo)
