@@ -43,7 +43,7 @@
             }
             const mainContainer= d3.select("#main-content")
             // Top margin for title, right margin for a key of each airline, bottom margin for axis and x-label, left margin for ylabel and y-axis
-            const margins={top:30,right:100,bottom:50,left:50}
+            const margins={top:30,right:200,bottom:50,left:50}
             const width=1300
             const height=800
             mainContainer.append("svg")
@@ -154,6 +154,14 @@
                 .attr("transform",`translate(${margins.left+chartWidth/2},${margins.top+30})`)
                 .attr("text-anchor","middle")
                 .attr("font-size","20px")
+            
+            svg.append("image")
+                .attr("class","legend")
+                .attr("xlink:href","images/legend.png")
+                .attr("transform",`translate(${margins.left+chartWidth+20},${margins.top+52})`)
+                .attr("width",192)
+                .attr("height",213)
+
                 
 
             // Plot points
