@@ -21,17 +21,30 @@
         .gridlines .domain {
           stroke: none;
         }
+
+        #other-content{
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+        h1{
+            font-family: Helvetica;
+        }
+        .gridlines line {
+          stroke: #bbb;
+        }
+        
+        .gridlines .domain {
+          stroke: none;
+        }
     </style>
 </head>
 <body>
-    <div id="main-content">
-    </div>
+    <div id="main-content"></div>
+    <div id="other-content"></div>
     <script>
         let data= d3.csv("Airline_review.csv")
-
         .then((data)=>{
-            
-
             //Constants
             const topFiveAirlineInfo= topFiveAirlineData(data)
             const airlineColors={
@@ -50,6 +63,7 @@
                             .attr("id","airline-visualization")
                             .attr("width",width)
                             .attr("height",height)
+
             const svg=d3.select("#airline-visualization")
             const ratingMinMax= [0,10]
             const domainMinMax= [0,12]
@@ -113,7 +127,7 @@
                 .attr("class","y-axis")
                 .attr("transform",`translate(${margins.left-10},${margins.top})`)
                 .call(leftAxis)
-            
+
             // Adding x axis to the DOM
             svg.append("g")
                 .attr("class", "x-axis")
@@ -204,6 +218,80 @@
             function createLegends(){
                 
             }
+
+            ////////////////// SECOND GRAPH ///////////////////////
+            const dataset= topFiveAirlineSeatData(data)
+            const otherContainer= d3.select("#other-content")
+            const seatColors={
+                "Economy Class":"#99C3FF",
+                "Business Class":"#398BFF",
+                "Premium Economy":"#0C59C6",
+                "First Class": "#032C67"
+            }
+            otherContainer.append("svg")
+                            .attr("id","airline-visualization2")
+                            .attr("width",width)
+                            .attr("height",height)
+
+            const svg2=d3.select("#airline-visualization2")
+
+            const chartArea2=svg2.append('g')
+                    .attr("transform",`translate(${margins.left},${margins.top})`)
+                    .attr("class","gridInfo")
+
+            const averages = d3.rollup(
+                dataset,
+                v => d3.mean(v, d => d.value),
+                d => d.seatType
+            );
+
+            const avgData = Array.from(averages, ([seatType, value]) => ({seatType, value}));
+
+            console.log(avgData)
+            const xScale0 = d3.scaleBand()
+                .domain(avgData.map(d => d.seatType))
+                .range([0,chartWidth])
+                .padding(0.1);
+
+            // Drawing bars inside chartArea2
+            chartArea2.selectAll("rect")
+                .data(avgData)
+                .join("rect")
+                .attr("x", d => xScale0(d.seatType))
+                .attr("y", d => yScale(d.value))
+                .attr("height", d => chartHeight- yScale(d.value))
+                .attr("width", xScale0.bandwidth())
+                .attr("fill", d => seatColors[d.seatType]);
+
+            // Adding axes to chartArea2
+            chartArea2.append("g")
+                .attr("transform", `translate(0,${height - margins.bottom - margins.top})`)
+                .call(d3.axisBottom(xScale0));
+
+            chartArea2.append("g")
+                .call(d3.axisLeft(yScale));
+
+            svg2.append("text")
+                .attr("class","title")
+                .text("Average Rating Per Seat Type")
+                .attr("transform",`translate(${margins.left+chartWidth/2},${margins.top+30})`)
+                .attr("text-anchor","middle")
+                .attr("font-size","20px")
+
+            // Add y label
+            svg2.append("text")
+                .attr("class","y-label")
+                .text("Average Rating")
+                .attr("transform",`translate(${margins.left-40},${(margins.top+margins.bottom+chartHeight)/2}) rotate(-90)`)
+                .attr("text-anchor","middle")
+            
+            svg2.append("image")
+                .attr("class","legend")
+                .attr("xlink:href","images/class-legend.png")
+                .attr("transform",`translate(${margins.left+chartWidth+20},${margins.top+52})`)
+                .attr("width",192)
+                .attr("height",213)
+
 
             /**
              * Filters airline data to retrieve the top five airlines with the most data
@@ -311,8 +399,31 @@
                     }
                     return {...airline,month:updatedMonthInformation}
                 })
-                console.log(fullData)
+                // console.log(fullData)
                 return averageAirlineRatingPerMonth
+            }
+
+            function topFiveAirlineSeatData(data){
+                let nameDateRating= data.map((datapoint)=>{
+                    return {
+                        "Airline Name":datapoint['Airline Name'], 
+                        "Overall Rating":parseFloat(datapoint['Overall_Rating']),
+                        "Type":datapoint['Seat Type']
+                    }
+                })
+                let seatTypes=[]
+                for (let i=0;i<nameDateRating.length;i++){
+                    let name= nameDateRating[i]["Airline Name"]
+                    let rating= nameDateRating[i]["Overall Rating"]
+                    let tp= nameDateRating[i]["Type"]
+                        if (!tp) {
+                            continue;
+                        }
+                        let tmp = {seatType: tp, value: rating}
+                        seatTypes.push(tmp);
+                }
+
+                return seatTypes;
             }
         })
         .catch()
