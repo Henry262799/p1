@@ -37,6 +37,7 @@
         .gridlines .domain {
           stroke: none;
         }
+
     </style>
 </head>
 <body>
@@ -221,11 +222,12 @@
 
             ////////////////// SECOND GRAPH ///////////////////////
             const dataset= topFiveAirlineSeatData(data)
+            // console.log(dataset)
             const otherContainer= d3.select("#other-content")
             const seatColors={
                 "Economy Class":"#99C3FF",
-                "Business Class":"#398BFF",
-                "Premium Economy":"#0C59C6",
+                "Business Class":"#0C59C6",
+                "Premium Economy":"#398BFF",
                 "First Class": "#032C67"
             }
             otherContainer.append("svg")
@@ -246,8 +248,15 @@
             );
 
             const avgData = Array.from(averages, ([seatType, value]) => ({seatType, value}));
+            
+            temp = avgData[2]
+            avgData[2] = avgData[1];
+            avgData[1] = temp;
 
             console.log(avgData)
+            console.log("HI")
+
+
             const xScale0 = d3.scaleBand()
                 .domain(avgData.map(d => d.seatType))
                 .range([0,chartWidth])
@@ -406,14 +415,12 @@
             function topFiveAirlineSeatData(data){
                 let nameDateRating= data.map((datapoint)=>{
                     return {
-                        "Airline Name":datapoint['Airline Name'], 
                         "Overall Rating":parseFloat(datapoint['Overall_Rating']),
                         "Type":datapoint['Seat Type']
                     }
                 })
                 let seatTypes=[]
                 for (let i=0;i<nameDateRating.length;i++){
-                    let name= nameDateRating[i]["Airline Name"]
                     let rating= nameDateRating[i]["Overall Rating"]
                     let tp= nameDateRating[i]["Type"]
                         if (!tp) {
